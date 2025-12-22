@@ -32,6 +32,8 @@ ZOOM_MAX = 5.0
 ZOOM_STEP = 0.1
 DEFAULT_UI_SIZE = 1.7
 
+user_name = "You"
+
 ui_scale = DEFAULT_UI_SIZE  
 settings_visible = False
 mic_active = False
@@ -116,6 +118,13 @@ chat_box = ctk.CTkTextbox(
     wrap="word",
     font=("Consolas", int(BASE_FONTS["chat"] * ui_scale))
 )
+
+chat_box.tag_config("user_name", foreground="#3b82f6")    # blue
+chat_box.tag_config("edith_name", foreground="#22c55e")   # green
+
+chat_box.tag_config("user_msg", justify="right")
+chat_box.tag_config("edith_msg", justify="left")
+
 chat_box.grid(row=0, column=0, sticky="nsew", padx=12, pady=12)
 chat_box.configure(state="disabled")
 
@@ -134,6 +143,26 @@ settings_title = ctk.CTkLabel(
 )
 settings_title.pack(pady=(18, 12))
 
+# User name ------------------------
+
+username_label = ctk.CTkLabel(
+    settings_panel,
+    text="Your Name",
+    font=("Segoe UI", int(BASE_FONTS["settings_label"] * ui_scale))
+)
+username_label.pack(pady=(10, 8))
+
+username_entry = ctk.CTkEntry(
+    settings_panel,
+    placeholder_text="Enter your name",
+    font=("Segoe UI", int(BASE_FONTS["input"] * ui_scale)),
+    height=int(30 * ui_scale)
+)
+username_entry.insert(0, user_name)
+username_entry.pack(padx=18, pady=(0, 12), fill="x")
+
+# Theme Mode ------------------------
+
 appearance_label = ctk.CTkLabel(
     settings_panel,
     text="Theme",
@@ -149,6 +178,8 @@ appearance_switch = ctk.CTkSegmentedButton(
 )
 appearance_switch.set("Dark")
 appearance_switch.pack(pady=6)
+
+# Zoom Slider ---------------------
 
 zoom_label = ctk.CTkLabel(
     settings_panel,
@@ -181,12 +212,16 @@ input_frame = ctk.CTkFrame(app, corner_radius=14)
 input_frame.grid(row=2, column=0, sticky="ew", padx=18, pady=14)
 input_frame.grid_columnconfigure(0, weight=1)
 
+# Chat Intput Box ----------------------------
+
 entry = ctk.CTkEntry(
     input_frame,
     placeholder_text="Type your message...",
     font=("Segoe UI", int(BASE_FONTS["input"] * ui_scale))
 )
 entry.grid(row=0, column=0, padx=14, pady=12, sticky="ew")
+
+# Send Msg Button -------------------------------
 
 send_btn = ctk.CTkButton(
     input_frame,
@@ -198,6 +233,8 @@ send_btn = ctk.CTkButton(
     command=lambda: on_send()
 )
 send_btn.grid(row=0, column=1, padx=14)
+
+# Mic Toggle Button ----------------------------
 
 mic_btn = ctk.CTkButton(
     input_frame,
@@ -221,6 +258,17 @@ def toggle_settings():
     else:
         settings_panel.grid_remove()
 
+# User Name Logic
+
+def update_username(event=None):
+    global user_name
+    name = username_entry.get().strip()
+    user_name = name if name else "You"
+
+username_entry.bind("<KeyRelease>", update_username)
+
+# Zoom Slider Logic
+
 def set_zoom(value):
     global ui_scale
     ui_scale = float(value)
@@ -240,6 +288,8 @@ def zoom_out(event=None):
 def zoom_reset(event=None):
     zoom_slider.set(DEFAULT_UI_SIZE)
     set_zoom(DEFAULT_UI_SIZE)
+
+# Mic Button Logic
 
 def toggle_mic():
     global mic_active
@@ -267,21 +317,34 @@ def toggle_mic():
         )
         add_message("Voice command disabled.", "assistant")
 
+# UI Zoom Logic -----------------------------
 
 def apply_zoom():
     title_label.configure(font=("Segoe UI", int(BASE_FONTS["title"] * ui_scale), "bold"))
     status_label.configure(font=("Segoe UI", int(BASE_FONTS["status"] * ui_scale)))
+
     chat_box.configure(font=("Consolas", int(BASE_FONTS["chat"] * ui_scale)))
     entry.configure(font=("Segoe UI", int(BASE_FONTS["input"] * ui_scale)))
-    settings_title.configure(font=("Segoe UI", int(BASE_FONTS["settings_title"] * ui_scale), "bold"))
-    appearance_label.configure(font=("Segoe UI", int(BASE_FONTS["settings_label"] * ui_scale)))
-    zoom_label.configure(font=("Segoe UI", int(BASE_FONTS["settings_label"] * ui_scale)))
+
     settings_btn.configure(font=("Segoe UI Symbol", int(BASE_FONTS["icon"] * ui_scale)))
+    settings_title.configure(font=("Segoe UI", int(BASE_FONTS["settings_title"] * ui_scale), "bold"))
+
+    appearance_label.configure(font=("Segoe UI", int(BASE_FONTS["settings_label"] * ui_scale)))
     appearance_switch.configure(font=("Segoe UI", int(BASE_FONTS["segmented"] * ui_scale)))
+
+    username_label.configure(font=("Segoe UI", int(BASE_FONTS["settings_label"] * ui_scale)))
+    username_entry.configure(font=("Segoe UI", int(BASE_FONTS["input"] * ui_scale)))
+    username_entry.configure(font=("Segoe UI", int(BASE_FONTS["settings_label"] * ui_scale)), height=int(32 * ui_scale))
+    username_entry.pack_configure(padx=int(18 * ui_scale), pady=(0, int(12 * ui_scale)))
+
+    zoom_label.configure(font=("Segoe UI", int(BASE_FONTS["settings_label"] * ui_scale)))
     zoom_value_label.configure(font=("Segoe UI", int(BASE_FONTS["settings_label"] * ui_scale)))
+
     mic_btn.configure(font=("Segoe UI", int(BASE_FONTS["icon"] * ui_scale)))
     mic_status_label.configure(font=("Segoe UI", int(BASE_FONTS["status"] * ui_scale)))
+
     send_btn.configure(font=("Segoe UI", int(BASE_FONTS["send_button"] * ui_scale)))
+
     mic_btn.configure(width=int(40 * ui_scale), height=int(40 * ui_scale))
     send_btn.configure(width=int(80 * ui_scale), height=int(40 * ui_scale))
     settings_btn.configure(width=int(40 * ui_scale), height=int(40 * ui_scale))
@@ -292,11 +355,42 @@ def apply_zoom():
 # -----------------------------
 def add_message(text, role="assistant"):
     chat_box.configure(state="normal")
+
     timestamp = datetime.now().strftime("%H:%M")
-    prefix = "You" if role == "user" else "EDITH"
-    chat_box.insert("end", f"{prefix} [{timestamp}]: {text}\n\n")
+
+    if role == "user":
+        # Username (blue)
+        chat_box.insert(
+            "end",
+            f"{user_name} [{timestamp}]: ",
+            ("user_name", "user_msg")
+        )
+
+        # Message text (normal)
+        chat_box.insert(
+            "end",
+            f"{text}\n\n",
+            "user_msg"
+        )
+
+    else:
+        # EDITH name (green)
+        chat_box.insert(
+            "end",
+            f"EDITH [{timestamp}]: ",
+            ("edith_name", "edith_msg")
+        )
+
+        # Message text (normal)
+        chat_box.insert(
+            "end",
+            f"{text}\n\n",
+            "edith_msg"
+        )
+
     chat_box.configure(state="disabled")
     chat_box.see("end")
+
 
 def on_send():
     text = entry.get().strip()
